@@ -17,8 +17,10 @@ mlflow.set_tracking_uri("http://localhost:5000")
 mlflow.set_experiment("mlops-training-experiment")
 
 # ===== Hugging Face Login =====
-login()  # prompts for your HF token in Colab
-api = HfApi()
+hf_token = os.getenv("HF_TOKEN")
+if hf_token is None:
+    raise ValueError("HF_TOKEN not set in environment.")
+api = HfApi(token=hf_token)
 
 # ===== Download Dataset from HF =====
 dataset_repo_id = "Suvidhya/tourism-package-prediction"
