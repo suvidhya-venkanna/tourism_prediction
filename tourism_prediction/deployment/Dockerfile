@@ -1,23 +1,17 @@
-# Use a minimal base image with Python 3.9 installed
+# Use Python 3.9 base image
 FROM python:3.9
 
-# Set the working directory inside the container to /app
+# Set working directory
 WORKDIR /app
 
-# Copy all files from the current directory on the host to the container's /app directory
-COPY . .
+# Copy dependency list first (better caching)
+COPY requirements.txt /app/
 
-# Install Python dependencies listed in requirements.txt
-RUN pip3 install -r requirements.txt
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN useradd -m -u 1000 user
-USER user
-ENV HOME=/home/user \
-	PATH=/home/user/.local/bin:$PATH
+# Copy all project files
+COPY . /app
 
-WORKDIR $HOME/app
-
-COPY --chown=user . $HOME/app
-
-# Define the command to run the Streamlit app on port "8501" and make it accessible externally
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.enableXsrfProtection=false"]
+# Run Streamlit on Hugging Face default port (7860)
+CMD ["streamlit", "run", "app.py", "--server.port=7860", "--server.address=0.0.0.0", "--server.enableXsrfProtection=false"]
