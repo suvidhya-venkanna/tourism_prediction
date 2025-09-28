@@ -3,7 +3,7 @@ name: Tourism Project Pipeline
 on:
   push:
     branches:
-      - main  # Automatically triggers on push to the main branch
+      - main
 
 jobs:
 
@@ -47,7 +47,7 @@ jobs:
         run: |
           nohup mlflow ui --host 0.0.0.0 --port 5000 &
           sleep 5
-      - name: Model Building
+      - name: Train Model
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python tourism_prediction/model_building/train.py
@@ -60,8 +60,29 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r tourism_prediction/deployment/requirements.txt
-      - name: Push files to Frontend Hugging Face Space
+          pip install huggingface_hub
+      - name: Deploy Streamlit App to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run:
+        run: |
+          python - <<EOF
+          import os, shutil
+          from huggingface_hub import HfApi
+
+          space_id = "Suvidhya/tourism-app"  # 👈 Your Hugging Face Space
+          api = HfApi()
+
+          # prepare a temp folder
+          if os.path.exists("space_temp"):
+              shutil.rmtree("space_temp")
+          os.makedirs("space_temp", exist_ok=True)
+          shutil.copy("tourism_prediction/deployment/app.py", "space_temp/app.py")
+          shutil.copy("tourism_prediction/deployment/requirements.txt", "space_temp/requirements.txt")
+
+          # upload to Space
+          api.upload_folder(
+              folder_path="space_temp",
+              repo_id=space_id,
+              repo_type="space"
+          )
+          EOF
